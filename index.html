@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>필요한 것만 — 자라는 정리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --bg:#FBFAF6; --surface:#FFFFFF; --ink:#26261F; --muted:#6F6E64; --faint:#9A998E;
+    --line:rgba(38,38,31,0.10); --line-2:rgba(38,38,31,0.20);
+    --have:#0F6E56; --have-soft:#E4F1EB; --miss:#9A6212;
+    --radius:12px;
+    font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.7;}
+  .wrap{max-width:620px;margin:0 auto;padding:32px 24px 80px;}
+
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 8px;}
+  input[type=text]{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+    border:0.5px solid var(--line-2);border-radius:var(--radius);padding:12px 14px;outline:none;}
+  input[type=text]:focus{border-color:var(--have);}
+  .row1{display:flex;gap:10px;} .row1 input{flex:1;}
+  .btn{border:none;background:var(--have);color:#fff;font-family:inherit;font-size:15px;font-weight:600;padding:0 22px;border-radius:10px;cursor:pointer;white-space:nowrap;}
+  .btn:hover{opacity:.92;} .btn.ghost{background:var(--surface);color:var(--have);border:0.5px solid var(--line-2);padding:11px 22px;}
+  .btn.ghost:hover{background:var(--have-soft);}
+
+  .status{color:var(--faint);font-size:14px;padding:18px 0;}
+
+  .answer{background:var(--surface);border:0.5px solid var(--line);border-radius:var(--radius);padding:18px 20px;
+    font-size:15px;white-space:pre-wrap;line-height:1.8;margin:16px 0 14px;}
+  .answer.collapsed{display:none;}
+  .answer-label{font-size:12px;color:var(--faint);margin:24px 2px 0;}
+  .toggle{background:none;border:none;color:var(--have);font-family:inherit;font-size:13px;cursor:pointer;padding:8px 2px;}
+  .toggle:hover{text-decoration:underline;}
+
+  .sec{margin:24px 0;}
+  .sec h4{font-size:13px;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:7px;color:var(--ink);}
+  .sec h4 .dot{width:8px;height:8px;border-radius:50%;background:var(--have);}
+  .sec.gap h4{color:var(--miss);} .sec.gap h4 .dot{background:var(--miss);}
+
+  .row{display:flex;align-items:baseline;gap:9px;padding:7px 0;}
+  .row .mk{color:var(--have);flex-shrink:0;font-size:14px;}
+  .gap>.row>.mk{color:var(--miss);}
+  .row .txt{font-size:14.5px;line-height:1.6;flex:1;}
+  .qnode>.row .qtxt{font-weight:500;}
+  .qnode>.row .mk{color:var(--have);}
+  .more{background:none;border:none;color:var(--faint);font-family:inherit;font-size:12px;cursor:pointer;flex-shrink:0;padding:2px 4px;border-radius:6px;}
+  .more:hover{color:var(--have);background:var(--have-soft);}
+  .gap>.row>.more:hover{color:var(--miss);background:#FAEEDA;}
+  .kids{padding-left:14px;margin-left:5px;border-left:0.5px solid var(--line);}
+  .kids.hidden{display:none;}
+
+  textarea{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+    border:0.5px solid var(--line-2);border-radius:var(--radius);padding:14px 16px;outline:none;line-height:1.8;min-height:150px;resize:vertical;}
+  textarea:focus{border-color:var(--have);}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <label>뭘 쓰려고 해요? (또는 뭐가 궁금해요?)</label>
+  <div class="row1">
+    <input type="text" id="task" value="겨울에 전기차 주행거리가 주는 이유를 짧은 블로그 글로 쓰기">
+    <button class="btn" id="get">받기</button>
+  </div>
+
+  <div id="step2" class="hidden">
+    <div class="answer-label" id="ans-label">AI 답변</div>
+    <button class="toggle hidden" id="toggle">원문 보기 ▾</button>
+    <div class="answer" id="answer"></div>
+    <div style="margin:4px 0 8px;"><button class="btn ghost" id="organize">정리하기</button></div>
+  </div>
+
+  <div id="status2" class="status hidden"></div>
+
+  <div id="step3" class="hidden">
+    <div class="sec" id="answered-sec">
+      <h4><span class="dot"></span>지금까지 알게 된 것 <span style="font-weight:400;color:var(--faint);font-size:12px;margin-left:4px;">— 줄을 눌러 더 파고들기</span></h4>
+      <div id="answered"></div>
+    </div>
+    <div class="sec gap hidden" id="missing-sec">
+      <h4><span class="dot"></span>아직 빠진 것</h4>
+      <div id="missing"></div>
+    </div>
+    <div class="sec">
+      <label>이어서 묻기 — 궁금한 게 생기면 계속 물어봐요</label>
+      <div class="row1">
+        <input type="text" id="ask" placeholder="예: 충전 시간은 겨울에 얼마나 길어져?">
+        <button class="btn" id="asksend">묻기</button>
+      </div>
+    </div>
+    <div class="sec">
+      <label>위 내용을 보며, 내 말로 글쓰기</label>
+      <textarea id="mywrite" placeholder="여기에 내 글을 써보세요…"></textarea>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let answerText="", task="";
+
+$('get').addEventListener('click', getAnswer);
+$('task').addEventListener('keydown', e=>{ if(e.key==='Enter') getAnswer(); });
+$('organize').addEventListener('click', organize);
+$('asksend').addEventListener('click', sendAsk);
+$('ask').addEventListener('keydown', e=>{ if(e.key==='Enter') sendAsk(); });
+$('toggle').addEventListener('click', ()=>{
+  const c=$('answer').classList.toggle('collapsed');
+  $('toggle').textContent = c ? '원문 보기 ▾' : '원문 접기 ▴';
+});
+
+async function getAnswer(){
+  task=$('task').value.trim(); if(!task) return;
+  $('step2').classList.remove('hidden'); $('step3').classList.add('hidden');
+  $('toggle').classList.add('hidden'); $('organize').classList.remove('hidden'); $('ans-label').classList.remove('hidden');
+  const a=$('answer'); a.classList.remove('collapsed'); a.textContent='답변 받는 중…';
+  try{
+    answerText=await callAPI([{role:"user", content:task}],
+      "사용자가 쓰려는 주제나 궁금한 점에 대해 평소처럼 친절하고 충분하게 한국어로 설명해 주세요. 자연스러운 문단 글로, 너무 짧지 않게.");
+    a.textContent=answerText;
+  }catch(e){ a.textContent='답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.'; }
+}
+
+async function organize(){
+  if(!answerText) return;
+  const st=$('status2'); st.classList.remove('hidden'); st.textContent='필요한 것을 추리는 중…';
+  $('step3').classList.add('hidden');
+  try{
+    const raw=await callAPI([{role:"user", content:`[쓰려는 것]\n${task}\n\n[AI가 준 글]\n${answerText}`}],
+      "사용자가 쓰려는 것(과제)과 AI가 준 긴 글이 주어집니다. 두 가지를 뽑으세요. (1) answered: 과제를 쓰는 데 도움이 되는, 글에 '실제로 나온' 핵심 내용을 구체적인 한 문장씩 3~6개. 추상 카테고리 말고 실제 사실로 쉽게. (2) missing: 과제엔 필요한데 이 글엔 '나오지 않은' 것 0~3개, 짧게. 반드시 아래 JSON만 출력하고 다른 말은 절대 쓰지 마세요: {\"answered\":[\"문장\"],\"missing\":[\"빠진 것\"]}");
+    const obj=JSON.parse(raw.replace(/```json|```/g,"").trim());
+    st.classList.add('hidden');
+    $('answered').innerHTML=''; $('missing').innerHTML='';
+    (obj.answered||[]).forEach(f=>$('answered').appendChild(makeNode(f,false)));
+    (obj.missing||[]).forEach(f=>$('missing').appendChild(makeNode(f,true)));
+    $('missing-sec').classList.toggle('hidden', !(obj.missing||[]).length);
+    $('mywrite').value='';
+    $('answer').classList.add('collapsed'); $('ans-label').classList.add('hidden');
+    $('toggle').classList.remove('hidden'); $('toggle').textContent='원문 보기 ▾';
+    $('organize').classList.add('hidden');
+    $('step3').classList.remove('hidden');
+  }catch(e){ st.textContent='정리하지 못했어요. 잠시 후 다시 시도해 주세요.'; }
+}
+
+function sendAsk(){
+  const q=$('ask').value.trim(); if(!q) return;
+  $('ask').value='';
+  const node=makeQuestionNode(q);
+  $('answered').appendChild(node);
+  node.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function makeQuestionNode(q){
+  const node=document.createElement('div'); node.className='node qnode';
+  const row=document.createElement('div'); row.className='row';
+  row.innerHTML='<span class="mk">↳</span><span class="txt qtxt">'+esc(q)+'</span>';
+  const btn=document.createElement('button'); btn.className='more'; btn.textContent='…';
+  const kids=document.createElement('div'); kids.className='kids';
+  row.appendChild(btn); node.appendChild(row); node.appendChild(kids);
+  let loaded=false;
+  btn.addEventListener('click', ()=>{ if(loaded){const h=kids.classList.toggle('hidden'); btn.textContent=h?'펴기 ▾':'접기 ▴';} });
+  (async()=>{
+    try{
+      const raw=await callAPI([{role:"user", content:`[주제]\n${task}\n\n[이어지는 질문]\n${q}`}],
+        "주제 맥락에서 사용자의 이어지는 질문에 답하되, 답의 핵심만 구체적인 한 문장씩 2~4개로 뽑으세요. 쉽게. 반드시 JSON 배열만 출력하고 다른 말 금지: [\"문장\"]");
+      const arr=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      arr.forEach(c=>kids.appendChild(makeNode(c,false)));
+      loaded=true; btn.textContent='접기 ▴';
+    }catch(e){ btn.textContent='실패'; }
+  })();
+  return node;
+}
+
+function makeNode(text, isGap){
+  const node=document.createElement('div'); node.className='node'+(isGap?' gap':'');
+  const row=document.createElement('div'); row.className='row';
+  row.innerHTML='<span class="mk">·</span><span class="txt">'+esc(text)+'</span>';
+  const btn=document.createElement('button'); btn.className='more'; btn.textContent= isGap?'찾아보기 ▾':'더 ▾';
+  const kids=document.createElement('div'); kids.className='kids hidden';
+  row.appendChild(btn); node.appendChild(row); node.appendChild(kids);
+  let loaded=false;
+  btn.addEventListener('click', async ()=>{
+    if(loaded){ const h=kids.classList.toggle('hidden'); btn.textContent=(h?(isGap?'찾아보기 ▾':'더 ▾'):'접기 ▴'); return; }
+    btn.textContent='불러오는 중…';
+    try{
+      const raw=await callAPI([{role:"user", content:`[주제]\n${task}\n\n[더 파고들 항목]\n${text}`}],
+        "주제와 그 안에서 더 알고 싶은 한 항목이 주어집니다. 그 항목을 한 단계 더 깊이 파고들어, 핵심을 구체적인 한 문장씩 2~4개로 뽑으세요. 쉽게. 반드시 JSON 배열만 출력하고 다른 말 금지: [\"문장\",\"문장\"]");
+      const arr=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      arr.forEach(c=>kids.appendChild(makeNode(c,false)));
+      kids.classList.remove('hidden'); loaded=true; btn.textContent='접기 ▴';
+    }catch(e){ btn.textContent= isGap?'찾아보기 ▾':'더 ▾'; }
+  });
+  return node;
+}
+
+async function callAPI(messages, system){
+  const res=await fetch("/api/ask",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({system, messages})
+  });
+  if(!res.ok) throw new Error('http '+res.status);
+  const data=await res.json();
+  const txt=(data.text||"").trim();
+  if(!txt) throw new Error('empty'); return txt;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+</script>
+</body>
+</html>
